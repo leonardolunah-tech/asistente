@@ -1,1 +1,2 @@
-# asistente
+# AraknIA
+Egregor totemico digital 
