@@ -141,10 +141,19 @@ sugerencias = ["📖 Explicar temas", "✍️ Corregir tareas", "💡 Resolver d
 chips = '<div class="temas-bar">' + ''.join(f'<span class="tema-chip">{s}</span>' for s in sugerencias) + '</div>'
 st.markdown(chips, unsafe_allow_html=True)
 
-# Botón para reiniciar el chat
-c1, c2, c3 = st.columns([1, 1, 1])
+# Controles de la interfaz
+c1, c2 = st.columns([2, 1])
+with c1:
+    # Selector de modelos
+    modelo_seleccionado = st.selectbox(
+        "🧠 Selecciona el modelo de IA:",
+        ["llama3-8b-8192", "mixtral-8x7b-32768"],
+        index=0
+    )
 with c2:
-    if st.button("🗑️ Reiniciar clase", key="btn_limpiar"):
+    st.write("") # Espaciador
+    st.write("") # Espaciador
+    if st.button("🗑️ Reiniciar clase", key="btn_limpiar", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
@@ -173,6 +182,7 @@ if not groq_key:
     st.stop()
 
 try:
+    # Se usa la URL oficial de Groq para estos modelos
     client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=groq_key)
 except Exception as e:
     st.error(f"Error al conectar con el servidor: {e}")
@@ -209,7 +219,7 @@ for message in st.session_state.messages:
             st.markdown(message["content"])
 
 # Procesamiento de la entrada del usuario
-def procesar_respuesta(user_input):
+def procesar_respuesta(user_input, modelo):
     with st.chat_message("user"):
         st.markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -220,7 +230,7 @@ def procesar_respuesta(user_input):
         try:
             mensajes_api = [{"role": "system", "content": SYSTEM_PROMPT}] + st.session_state.messages
             stream = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model=modelo,  # Se usa el modelo seleccionado en el menú desplegable
                 messages=mensajes_api,
                 stream=True
             )
@@ -244,4 +254,4 @@ def procesar_respuesta(user_input):
 
 # Chat input
 if prompt := st.chat_input("Escribe tu pregunta o tema a repasar..."):
-    procesar_respuesta(prompt)
+    procesar_respuesta(prompt, modelo_seleccionado)
