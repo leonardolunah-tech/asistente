@@ -1,18 +1,19 @@
-import streamlit as st
-from openai import OpenAI
-from gtts import gTTS
 import io
+import re
+from gTTS import gTTS
+from openai import OpenAI
+import streamlit as st
 
 # Configuración de página con icono e interfaz limpia
 st.set_page_config(
-    page_title="Asistente Virtual", 
-    page_icon="✨", 
-    layout="centered", 
-    initial_sidebar_state="collapsed", 
+    page_title="El Maestro Virtual",
+    page_icon="👨‍🏫",
+    layout="centered",
+    initial_sidebar_state="collapsed",
     menu_items={'Get Help': None, 'Report a bug': None, 'About': None}
 )
 
-# Estilos CSS personalizados (Paleta Cálida y Amigable en Tonos Azul/Violeta)
+# Estilos CSS personalizados (Paleta cálida y didáctica)
 css_amable = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -52,7 +53,7 @@ css_amable = """
         margin: 0.5rem 0 !important;
     }
     
-    /* Mensaje del Asistente */
+    /* Mensaje del Asistente (Maestro) */
     [data-testid="stChatMessage"][data-testid*="assistant"] {
         background: #ffffff !important; 
         border: 1px solid rgba(99, 102, 241, 0.15) !important; 
@@ -60,7 +61,7 @@ css_amable = """
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     }
     
-    /* Mensaje del Usuario */
+    /* Mensaje del Estudiante (Usuario) */
     [data-testid="stChatMessage"][data-testid*="user"] {
         background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important; 
         border: none !important; 
@@ -132,45 +133,64 @@ st.markdown(css_amable, unsafe_allow_html=True)
 
 # Encabezado principal
 st.markdown('<div class="sep">✦ ✦ ✦ ✦ ✦</div>', unsafe_allow_html=True)
-st.title("✨ Asistente Virtual ✨")
-st.caption("Tu compañero atento, servicial y siempre listo para ayudarte")
+st.title("👨‍🏫 El Maestro Virtual")
+st.caption("Tu tutor interactivo para aprender, resolver dudas y guiarte paso a paso")
 
-# Etiquetas de sugerencia/capacidades
-sugerencias = ["💬 Conversar", "💡 Resolver dudas", "✍️ Redactar ideas", "📚 Aprender algo nuevo"]
+# Etiquetas de sugerencia/capacidades didácticas
+sugerencias = ["📖 Explicar temas", "✍️ Corregir tareas", "💡 Resolver dudas", "🧪 Ejemplos prácticos"]
 chips = '<div class="temas-bar">' + ''.join(f'<span class="tema-chip">{s}</span>' for s in sugerencias) + '</div>'
 st.markdown(chips, unsafe_allow_html=True)
 
-# Botón para limpiar el chat
-c1, c2, c3 = st.columns([1,1,1])
+# Botón para reiniciar el chat
+c1, c2, c3 = st.columns([1, 1, 1])
 with c2:
-    if st.button("🗑️ Limpiar conversación", key="btn_limpiar"):
+    if st.button("🗑️ Reiniciar clase", key="btn_limpiar"):
         st.session_state.messages = []
         st.rerun()
 
 st.markdown('<div class="sep">· · · · ·</div>', unsafe_allow_html=True)
 
-# Prompt del Sistema enfocado en amabilidad y ayuda general
-SYSTEM_PROMPT = """Eres un asistente virtual increíblemente amable, cálido, atento y servicial. Tu objetivo principal es ayudar al usuario de la manera más clara, empática y agradable posible.
+# Prompt del Sistema enfocado en rol de Profesor / Maestro
+SYSTEM_PROMPT = """Eres un maestro y tutor altamente preparado, paciente, empático y dedicado. Tu objetivo es ayudar a los estudiantes a comprender cualquier concepto, resolver dudas académicas o prácticas y fomentar el pensamiento crítico.
 
-Pautas de comportamiento:
-1. Tono de voz: Muy respetuoso, amigable, positivo y paciente. Usa un lenguaje claro y acogedor.
-2. Formato de respuesta: Sé conciso pero completo. Organiza la información con puntos o párrafos breves cuando sea conveniente para facilitar la lectura.
-3. Empatía y disposición: Muestra siempre entusiasmo por ayudar. Si el usuario comete un error o duda, guíalo amablemente sin juzgar.
-4. Uso de emojis: Utiliza emojis con moderación pero calidez para mantener una atmósfera cercana (✨😊💡🤝🌸).
-5. Versatilidad: Puedes ayudar en tareas creativas, explicaciones, organización de ideas, conversación cotidiana o resolución de dudas cotidianas.
-6. Si te preguntan quién te creó, responde con amabilidad que eres un asistente virtual diseñado para ser su compañero de apoyo en lo que necesite."""
+Pautas didácticas:
+1. Tono pedagógico: Amable, motivador, formal pero cercano. Trata al usuario como a un alumno con ganas de aprender.
+2. Estructura clara: Explica de lo general a lo particular. Usa listas, viñetas y negritas para resaltar puntos clave.
+3. Ejemplos sencillos: Acompaña las explicaciones complejas con analogías o ejemplos cotidianos de la vida real.
+4. Verificación de aprendizaje: Al final de una explicación extensa, puedes hacer una pregunta breve o proponer un pequeño ejercicio para confirmar la comprensión.
+5. Corrección constructiva: Si el alumno comete un error, felicítalo por el intento, explica amablemente dónde estuvo el fallo y cómo corregirlo sin juzgar.
+6. Uso de emojis didácticos: Usa iconos con moderación para organizar la lectura (📚, 💡, ✏️, 🎯, 🔍)."""
 
-# Inicialización de cliente OpenAI (conectado a Groq)
-try:
-    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=st.secrets["groq"]["api_key"])
-except Exception:
-    st.error("Error de configuración: Revisa que la clave de la API esté configurada correctamente en los Secrets de Streamlit.")
+# Obtención segura de la clave API
+groq_key = None
+if "groq" in st.secrets and "api_key" in st.secrets["groq"]:
+    groq_key = st.secrets["groq"]["api_key"]
+elif "GROQ_API_KEY" in st.secrets:
+    groq_key = st.secrets["GROQ_API_KEY"]
+
+if not groq_key:
+    st.error("⚠️ Configuración requerida: Define 'api_key' dentro del bloque [groq] en los Secrets de Streamlit.")
     st.stop()
+
+try:
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=groq_key)
+except Exception as e:
+    st.error(f"Error al conectar con el servidor: {e}")
+    st.stop()
+
+# Función para limpiar sintaxis Markdown antes de sintetizar voz
+def limpiar_texto_para_tts(texto):
+    texto = re.sub(r'[\*\#\`\_]', '', texto)
+    texto = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', texto)
+    return texto.strip()
 
 # Función para convertir texto a voz
 def text_to_speech_web(text):
     try:
-        tts = gTTS(text=text, lang='es', slow=False)
+        texto_limpio = limpiar_texto_para_tts(text)
+        if not texto_limpio:
+            return None
+        tts = gTTS(text=texto_limpio, lang='es', slow=False)
         audio_fp = io.BytesIO()
         tts.write_to_fp(audio_fp)
         audio_fp.seek(0)
@@ -178,11 +198,11 @@ def text_to_speech_web(text):
     except Exception:
         return None
 
-# Estado de la sesión para el historial
+# Estado de la sesión para el historial de mensajes
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar historial de mensajes
+# Mostrar historial de conversación
 for message in st.session_state.messages:
     if message["role"] != "system":
         with st.chat_message(message["role"]):
@@ -200,8 +220,8 @@ def procesar_respuesta(user_input):
         try:
             mensajes_api = [{"role": "system", "content": SYSTEM_PROMPT}] + st.session_state.messages
             stream = client.chat.completions.create(
-                model="llama-3.1-8b-instant", 
-                messages=mensajes_api, 
+                model="llama-3.1-8b-instant",
+                messages=mensajes_api,
                 stream=True
             )
             for chunk in stream:
@@ -218,10 +238,10 @@ def procesar_respuesta(user_input):
                     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
                     
         except Exception as e:
-            st.error(f"Ocurrió un pequeño inconveniente: {str(e)}")
+            st.error(f"Ocurrió un inconveniente al procesar la respuesta: {str(e)}")
             if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
                 st.session_state.messages.pop()
 
-# Input del chat
-if prompt := st.chat_input("¿En qué te puedo ayudar hoy?..."):
+# Chat input
+if prompt := st.chat_input("Escribe tu pregunta o tema a repasar..."):
     procesar_respuesta(prompt)
