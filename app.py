@@ -1,6 +1,6 @@
 import io
 import re
-from gTTS import gTTS
+from gtts import gTTS
 from openai import OpenAI
 import streamlit as st
 
