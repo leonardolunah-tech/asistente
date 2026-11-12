@@ -23,7 +23,7 @@ st.set_page_config(
 # ----------------- ESTILOS CSS (CORREGIDOS PARA MÓVIL Y MODO OSCURO) -----------------
 css_pergamino = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&display=swap&#39;);
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&display=swap');
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     [data-testid="stDecoration"] {display: none;} .stDeployButton {display: none;}
     [data-testid="stToolbar"] {display: none;} [data-testid="stStatusWidget"] {display: none;}
@@ -106,7 +106,7 @@ st.markdown(css_pergamino, unsafe_allow_html=True)
 # ----------------- INICIALIZACIÓN DEL CLIENTE Y AUTODETECCIÓN DE MODELO -----------------
 try:
     api_key = st.secrets["groq"]["api_key"].strip()
-    client = OpenAI(base_url="https://api.groq.com/openai/v1&quot;, api_key=api_key)
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
 except Exception:
     st.error("⚠️ Error de configuración: Revisa que `st.secrets['groq']['api_key']` esté definido en tus Secrets.")
     st.stop()
@@ -117,7 +117,7 @@ def obtener_modelos_funcionales(key_str):
     Consulta los modelos habilitados en la cuenta de Groq del usuario,
     filtra los que no son de chat de texto y verifica en vivo cuáles responden sin error 400/404.
     """
-    cli = OpenAI(base_url="https://api.groq.com/openai/v1&quot;, api_key=key_str)
+    cli = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=key_str)
     palabras_excluidas = [
         "whisper", "guard", "safety", "vision", "embed", "classify",
         "tts", "audio", "orpheus", "playai", "distil-whisper", "tool-use", "compound"
@@ -257,6 +257,7 @@ Un buen objetivo responde a la pregunta:
 ¿Qué cambio queremos conseguir?
 Contrastar mis ideas con las 5 características de un buen Objetivo
 1. Inspirador: debe motivar.
+
 ❌ Incrementar ventas.
 ✅ Convertirnos en un socio estratégico para el crecimiento de nuestro cliente.
 2. Claro: todos deben entenderlo de la misma manera.
@@ -318,18 +319,21 @@ No avances hasta que yo haya aclarado la decisión.
 
 ORDEN DEL PROYECTO
 1. DEFINIR EL OBJETIVO
+
 2. RESULTADOS CLAVE (entre 2 y 5 estrictamente, siguiendo Métrica + valor inicial + valor objetivo; mide resultados, no actividades).
 3. PLAN DE ACCION (Revisa cada KR por separado, 3 a 5 factores críticos de éxito, iniciativas fuertes, Prueba PAS, clasifica en Descubrir, Desarrollar, Convertir, Expandir, y asigna ¿Qué?, ¿Quién?, ¿Cuándo?, ¿Resultado esperado?).
 
 UNA VEZ APROBADOS LOS TRES PASOS
 Presenta el ENTREGABLE FINAL OBLIGATORIO estructurado en tablas Markdown claras con:
 1. OBJETIVO (exclusivamente la versión final aprobada).
+
 2. RESULTADOS CLAVE / PLAN DE ACCION (cuadro con cada resultado clave y sus acciones).
 Indícame también que puedo descargar el archivo editable (.docx) desde la barra lateral.
 
 COMIENZA AHORA
 Comienza directamente con:
 1. CUAL ES TU OBJETIVO
+
 Hazme tus primeras dos o tres preguntas.
 """
 
@@ -337,6 +341,7 @@ MENSAJE_INICIAL = """**1. ¿CUÁL ES TU OBJETIVO?**
 
 Para comenzar a definir tu objetivo con claridad, respóndeme estas primeras preguntas:
 1. ¿Qué cambio concreto quieres conseguir con tu proyecto o equipo?
+
 2. ¿Por qué es importante lograr ese cambio en este momento?
 3. Si todo sale como esperas, ¿cómo se verá ese estado futuro una vez alcanzado?"""
 
